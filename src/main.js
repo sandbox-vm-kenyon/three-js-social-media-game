@@ -1,6 +1,7 @@
 import { GameScene } from './Scene.js'
 import { Player } from './Player.js'
 import { SpriteGenerator } from './SpriteGenerator.js'
+import * as THREE from 'three'
 
 class Game {
   constructor() {
@@ -12,18 +13,87 @@ class Game {
     this.fps = 0
     this.running = true
     this.spriteManager = this.scene.getSpriteManager()
+    this.profileManager = this.scene.getProfileManager()
     this.npcSprites = new Map()
 
     // Update scene with player position
     this.scene.setPlayerPosition(this.player.position.x, this.player.position.y, this.player.position.z)
 
     this.setupControls()
+    this.createTestProfiles()
     this.createTestNPCs()
     this.startGameLoop()
   }
 
+  createTestProfiles() {
+    // Create test user profiles with zones
+    const testProfiles = [
+      {
+        id: 'alice',
+        username: 'Alice',
+        position: { x: 50, y: 0, z: 50 },
+        interests: ['nature', 'photography'],
+        bio: 'Nature lover and photographer',
+        skinColor: 0xffdbac,
+        hairColor: 0x8B4513
+      },
+      {
+        id: 'bob',
+        username: 'Bob',
+        position: { x: -50, y: 0, z: -50 },
+        interests: ['gaming', 'tech'],
+        bio: 'Tech enthusiast and gamer',
+        skinColor: 0xffdbac,
+        hairColor: 0x000000
+      },
+      {
+        id: 'charlie',
+        username: 'Charlie',
+        position: { x: 100, y: 0, z: -50 },
+        interests: ['art', 'music'],
+        bio: 'Artist exploring interactive media',
+        skinColor: 0xffdbac,
+        hairColor: 0xFF6347
+      },
+      {
+        id: 'diana',
+        username: 'Diana',
+        position: { x: -100, y: 0, z: 100 },
+        interests: ['nature', 'gardening'],
+        bio: 'Master gardener and botanist',
+        skinColor: 0xffdbac,
+        hairColor: 0x4B0082
+      },
+      {
+        id: 'eve',
+        username: 'Eve',
+        position: { x: 75, y: 0, z: -100 },
+        interests: ['science', 'nature'],
+        bio: 'Science communicator',
+        skinColor: 0xffdbac,
+        hairColor: 0xDC143C
+      }
+    ]
+
+    testProfiles.forEach(profileData => {
+      this.profileManager.createProfile(
+        profileData.id,
+        profileData.username,
+        new THREE.Vector3(profileData.position.x, profileData.position.y, profileData.position.z),
+        {
+          interests: profileData.interests,
+          bio: profileData.bio,
+          skinColor: profileData.skinColor,
+          hairColor: profileData.hairColor,
+          zoneRadius: 40,
+          zoneShape: 'circle'
+        }
+      )
+    })
+  }
+
   createTestNPCs() {
-    // Create some test NPCs scattered around the map
+    // Create NPCs at profile locations
     const npcPositions = [
       { x: 50, z: 50, type: 'npc' },
       { x: -50, z: -50, type: 'merchant' },
@@ -82,6 +152,9 @@ class Game {
       // Update scene with new player position
       this.scene.setPlayerPosition(this.player.position.x, this.player.position.y, this.player.position.z)
 
+      // Update profile zones
+      this.scene.updateProfileZones(this.player.position)
+
       // Update sprites (billboarding and animation)
       this.scene.updateSprites(deltaTime)
 
@@ -109,6 +182,7 @@ class Game {
     const playerPos = document.getElementById('playerPos')
     const playerVel = document.getElementById('playerVel')
     const spriteCount = document.getElementById('spriteCount')
+    const profileInfo = document.getElementById('profileInfo')
 
     if (fpsCounter) {
       fpsCounter.textContent = this.fps
@@ -126,6 +200,18 @@ class Game {
 
     if (spriteCount) {
       spriteCount.textContent = this.spriteManager.getSpriteCount()
+    }
+
+    if (profileInfo) {
+      const currentProfile = this.profileManager.getCurrentProfile()
+      if (currentProfile) {
+        profileInfo.innerHTML = `
+          <strong>In Zone:</strong> ${currentProfile.username}<br/>
+          <small>${currentProfile.bio}</small>
+        `
+      } else {
+        profileInfo.innerHTML = '<small>Explore the world to find profiles</small>'
+      }
     }
   }
 }

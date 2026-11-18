@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { SpriteManager } from './SpriteManager.js'
+import { ProfileManager } from './ProfileManager.js'
 
 export class GameScene {
   constructor(canvas) {
@@ -12,6 +13,7 @@ export class GameScene {
     this.targetCameraPosition = new THREE.Vector3(50, 60, 50)
     this.cameraSmoothness = 0.1
     this.spriteManager = null
+    this.profileManager = null
 
     this.init()
   }
@@ -23,6 +25,7 @@ export class GameScene {
     this.setupLighting()
     this.setupEnvironment()
     this.spriteManager = new SpriteManager(this.scene)
+    this.profileManager = new ProfileManager(this.scene)
     this.handleWindowResize()
 
     window.addEventListener('resize', () => this.onWindowResize())
@@ -213,6 +216,16 @@ export class GameScene {
     return this.spriteManager
   }
 
+  getProfileManager() {
+    return this.profileManager
+  }
+
+  updateProfileZones(playerPosition) {
+    if (this.profileManager) {
+      this.profileManager.updatePlayerPosition(playerPosition)
+    }
+  }
+
   render() {
     this.smoothCameraToTarget()
     this.renderer.render(this.scene, this.camera)
@@ -221,6 +234,9 @@ export class GameScene {
   dispose() {
     if (this.spriteManager) {
       this.spriteManager.dispose()
+    }
+    if (this.profileManager) {
+      this.profileManager.dispose()
     }
     this.renderer.dispose()
   }
