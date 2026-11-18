@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { SpriteManager } from './SpriteManager.js'
 
 export class GameScene {
   constructor(canvas) {
@@ -10,6 +11,7 @@ export class GameScene {
     this.cameraOffset = new THREE.Vector3(50, 60, 50)
     this.targetCameraPosition = new THREE.Vector3(50, 60, 50)
     this.cameraSmoothness = 0.1
+    this.spriteManager = null
 
     this.init()
   }
@@ -20,6 +22,7 @@ export class GameScene {
     this.setupCamera()
     this.setupLighting()
     this.setupEnvironment()
+    this.spriteManager = new SpriteManager(this.scene)
     this.handleWindowResize()
 
     window.addEventListener('resize', () => this.onWindowResize())
@@ -199,12 +202,26 @@ export class GameScene {
     this.renderer.setSize(width, height)
   }
 
+  updateSprites(deltaTime) {
+    if (this.spriteManager) {
+      this.spriteManager.updateBillboards(this.camera.position)
+      this.spriteManager.update(deltaTime)
+    }
+  }
+
+  getSpriteManager() {
+    return this.spriteManager
+  }
+
   render() {
     this.smoothCameraToTarget()
     this.renderer.render(this.scene, this.camera)
   }
 
   dispose() {
+    if (this.spriteManager) {
+      this.spriteManager.dispose()
+    }
     this.renderer.dispose()
   }
 }

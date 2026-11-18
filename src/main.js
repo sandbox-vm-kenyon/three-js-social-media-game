@@ -1,5 +1,6 @@
 import { GameScene } from './Scene.js'
 import { Player } from './Player.js'
+import { SpriteGenerator } from './SpriteGenerator.js'
 
 class Game {
   constructor() {
@@ -10,12 +11,41 @@ class Game {
     this.frameCount = 0
     this.fps = 0
     this.running = true
+    this.spriteManager = this.scene.getSpriteManager()
+    this.npcSprites = new Map()
 
     // Update scene with player position
     this.scene.setPlayerPosition(this.player.position.x, this.player.position.y, this.player.position.z)
 
     this.setupControls()
+    this.createTestNPCs()
     this.startGameLoop()
+  }
+
+  createTestNPCs() {
+    // Create some test NPCs scattered around the map
+    const npcPositions = [
+      { x: 50, z: 50, type: 'npc' },
+      { x: -50, z: -50, type: 'merchant' },
+      { x: 100, z: -50, type: 'quest' },
+      { x: -100, z: 100, type: 'npc' },
+      { x: 75, z: -100, type: 'npc' }
+    ]
+
+    npcPositions.forEach((pos, index) => {
+      const texture = SpriteGenerator.createNPCSprite(pos.type)
+      const { id } = this.spriteManager.createSprite(
+        { x: pos.x, y: 0, z: pos.z },
+        { width: 32, height: 32 }
+      )
+
+      // Update with generated texture
+      const sprite = this.spriteManager.sprites.get(id).sprite
+      sprite.material.map = texture
+      sprite.material.needsUpdate = true
+
+      this.npcSprites.set(id, { x: pos.x, z: pos.z, type: pos.type })
+    })
   }
 
   setupControls() {
@@ -52,6 +82,9 @@ class Game {
       // Update scene with new player position
       this.scene.setPlayerPosition(this.player.position.x, this.player.position.y, this.player.position.z)
 
+      // Update sprites (billboarding and animation)
+      this.scene.updateSprites(deltaTime)
+
       this.updateFPS()
       this.scene.render()
       this.updateUI()
@@ -75,6 +108,7 @@ class Game {
     const fpsCounter = document.getElementById('fpsCounter')
     const playerPos = document.getElementById('playerPos')
     const playerVel = document.getElementById('playerVel')
+    const spriteCount = document.getElementById('spriteCount')
 
     if (fpsCounter) {
       fpsCounter.textContent = this.fps
@@ -88,6 +122,10 @@ class Game {
     if (playerVel) {
       const speed = this.player.velocity.length().toFixed(1)
       playerVel.textContent = speed
+    }
+
+    if (spriteCount) {
+      spriteCount.textContent = this.spriteManager.getSpriteCount()
     }
   }
 }
