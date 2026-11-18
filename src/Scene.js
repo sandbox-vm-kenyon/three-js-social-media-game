@@ -8,6 +8,8 @@ export class GameScene {
     this.renderer = null
     this.playerPosition = new THREE.Vector3(0, 0, 0)
     this.cameraOffset = new THREE.Vector3(50, 60, 50)
+    this.targetCameraPosition = new THREE.Vector3(50, 60, 50)
+    this.cameraSmoothness = 0.1
 
     this.init()
   }
@@ -167,8 +169,16 @@ export class GameScene {
     const targetY = this.playerPosition.y + this.cameraOffset.y
     const targetZ = this.playerPosition.z + this.cameraOffset.z
 
-    this.camera.position.set(targetX, targetY, targetZ)
+    // Store target for smooth lerping in render loop
+    this.targetCameraPosition.set(targetX, targetY, targetZ)
+
+    // Look at player with slight height offset for better viewing angle
     this.camera.lookAt(this.playerPosition.x, this.playerPosition.y + 5, this.playerPosition.z)
+  }
+
+  smoothCameraToTarget() {
+    // Smooth camera movement using lerp
+    this.camera.position.lerp(this.targetCameraPosition, this.cameraSmoothness)
   }
 
   setPlayerPosition(x, y, z) {
@@ -190,6 +200,7 @@ export class GameScene {
   }
 
   render() {
+    this.smoothCameraToTarget()
     this.renderer.render(this.scene, this.camera)
   }
 

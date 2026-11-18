@@ -1,53 +1,56 @@
 import { GameScene } from './Scene.js'
+import { Player } from './Player.js'
 
 class Game {
   constructor() {
     this.canvas = document.getElementById('canvas')
+    this.player = new Player(0, 0)
     this.scene = new GameScene(this.canvas)
     this.lastFrameTime = Date.now()
     this.frameCount = 0
     this.fps = 0
     this.running = true
 
+    // Update scene with player position
+    this.scene.setPlayerPosition(this.player.position.x, this.player.position.y, this.player.position.z)
+
     this.setupControls()
     this.startGameLoop()
   }
 
   setupControls() {
-    document.addEventListener('keydown', (e) => this.handleInput(e))
+    document.addEventListener('keydown', (e) => this.handleKeyDown(e))
+    document.addEventListener('keyup', (e) => this.handleKeyUp(e))
   }
 
-  handleInput(event) {
-    const moveDistance = 2
-    const { x, y, z } = this.scene.playerPosition
+  handleKeyDown(event) {
+    if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(event.key.toLowerCase())) {
+      this.player.setInput(event.key, true)
+      event.preventDefault()
+    }
+  }
 
-    switch(event.key.toLowerCase()) {
-      case 'w':
-      case 'arrowup':
-        this.scene.setPlayerPosition(x, y, z - moveDistance)
-        event.preventDefault()
-        break
-      case 's':
-      case 'arrowdown':
-        this.scene.setPlayerPosition(x, y, z + moveDistance)
-        event.preventDefault()
-        break
-      case 'a':
-      case 'arrowleft':
-        this.scene.setPlayerPosition(x - moveDistance, y, z)
-        event.preventDefault()
-        break
-      case 'd':
-      case 'arrowright':
-        this.scene.setPlayerPosition(x + moveDistance, y, z)
-        event.preventDefault()
-        break
+  handleKeyUp(event) {
+    if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(event.key.toLowerCase())) {
+      this.player.setInput(event.key, false)
+      event.preventDefault()
     }
   }
 
   startGameLoop() {
+    let lastTime = Date.now()
     const animate = () => {
       requestAnimationFrame(animate)
+
+      const now = Date.now()
+      const deltaTime = (now - lastTime) / 1000
+      lastTime = now
+
+      // Update player movement
+      this.player.update(deltaTime)
+
+      // Update scene with new player position
+      this.scene.setPlayerPosition(this.player.position.x, this.player.position.y, this.player.position.z)
 
       this.updateFPS()
       this.scene.render()
@@ -70,15 +73,21 @@ class Game {
 
   updateUI() {
     const fpsCounter = document.getElementById('fpsCounter')
-    const cameraPos = document.getElementById('cameraPos')
+    const playerPos = document.getElementById('playerPos')
+    const playerVel = document.getElementById('playerVel')
 
     if (fpsCounter) {
       fpsCounter.textContent = this.fps
     }
 
-    if (cameraPos) {
-      const cam = this.scene.camera.position
-      cameraPos.textContent = `${cam.x.toFixed(0)}, ${cam.y.toFixed(0)}, ${cam.z.toFixed(0)}`
+    if (playerPos) {
+      const pos = this.player.position
+      playerPos.textContent = `${pos.x.toFixed(1)}, ${pos.z.toFixed(1)}`
+    }
+
+    if (playerVel) {
+      const speed = this.player.velocity.length().toFixed(1)
+      playerVel.textContent = speed
     }
   }
 }
