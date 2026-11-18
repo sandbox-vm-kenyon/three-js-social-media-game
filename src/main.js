@@ -6,8 +6,9 @@ import * as THREE from 'three'
 class Game {
   constructor() {
     this.canvas = document.getElementById('canvas')
-    this.player = new Player(0, 0)
     this.scene = new GameScene(this.canvas)
+    this.collisionDetector = this.scene.getCollisionDetector()
+    this.player = new Player(0, 0, this.collisionDetector)
     this.lastFrameTime = Date.now()
     this.frameCount = 0
     this.fps = 0
@@ -210,7 +211,7 @@ class Game {
           <small>${currentProfile.bio}</small>
         `
       } else {
-        profileInfo.innerHTML = '<small>Explore the world to find profiles</small>'
+        profileInfo.innerHTML = '<small>Explore the world to find profiles. Collisions enabled.</small>'
       }
     }
   }

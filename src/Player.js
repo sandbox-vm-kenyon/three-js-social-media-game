@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 
 export class Player {
-  constructor(startX = 0, startZ = 0) {
+  constructor(startX = 0, startZ = 0, collisionDetector = null) {
     this.position = new THREE.Vector3(startX, 0, startZ)
     this.velocity = new THREE.Vector3(0, 0, 0)
 
@@ -11,6 +11,10 @@ export class Player {
     this.friction = 0.92
     this.boundaryMin = -500
     this.boundaryMax = 500
+
+    // Collision detection
+    this.collisionDetector = collisionDetector
+    this.useCollision = collisionDetector !== null
 
     // Input state tracking
     this.keys = {
@@ -68,12 +72,25 @@ export class Player {
       this.velocity.normalize().multiplyScalar(this.maxSpeed)
     }
 
-    // Update position
-    this.position.addScaledVector(this.velocity, deltaTime)
+    // Calculate desired movement
+    const desiredMovement = this.velocity.clone().multiplyScalar(deltaTime)
+
+    // Apply collision detection if available
+    if (this.useCollision && this.collisionDetector) {
+      const safeMovement = this.collisionDetector.getSafeMovement(
+        this.position,
+        desiredMovement
+      )
+      this.position.add(safeMovement)
+    } else {
+      // No collision, apply full movement
+      this.position.add(desiredMovement)
+    }
 
     // Apply world boundaries
-    this.position.x = Math.max(this.boundaryMin, Math.min(this.boundaryMax, this.position.x))
-    this.position.z = Math.max(this.boundaryMin, Math.min(this.boundaryMax, this.position.z))
+    this.collisionDetector?.clampToBounds(this.position, 500) ||
+      (this.position.x = Math.max(this.boundaryMin, Math.min(this.boundaryMax, this.position.x)),
+       this.position.z = Math.max(this.boundaryMin, Math.min(this.boundaryMax, this.position.z)))
 
     // Keep y at ground level
     this.position.y = 0

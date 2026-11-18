@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { SpriteManager } from './SpriteManager.js'
 import { ProfileManager } from './ProfileManager.js'
+import { CollisionDetector } from './CollisionDetector.js'
 
 export class GameScene {
   constructor(canvas) {
@@ -14,6 +15,7 @@ export class GameScene {
     this.cameraSmoothness = 0.1
     this.spriteManager = null
     this.profileManager = null
+    this.collisionDetector = null
 
     this.init()
   }
@@ -26,6 +28,8 @@ export class GameScene {
     this.setupEnvironment()
     this.spriteManager = new SpriteManager(this.scene)
     this.profileManager = new ProfileManager(this.scene)
+    this.collisionDetector = new CollisionDetector(this.scene)
+    this.setupCollisionGeometry()
     this.handleWindowResize()
 
     window.addEventListener('resize', () => this.onWindowResize())
@@ -145,7 +149,7 @@ export class GameScene {
   }
 
   createTree(x, z) {
-    // Trunk
+    // Trunk (collision geometry)
     const trunkGeometry = new THREE.CylinderGeometry(5, 6, 20, 8)
     const trunkMaterial = new THREE.MeshStandardMaterial({
       color: 0x654321,
@@ -156,6 +160,11 @@ export class GameScene {
     trunk.castShadow = true
     trunk.receiveShadow = true
     this.scene.add(trunk)
+
+    // Register trunk for collision detection
+    if (this.collisionDetector) {
+      this.collisionDetector.registerCollisionMesh(trunk)
+    }
 
     // Foliage
     const foliageGeometry = new THREE.SphereGeometry(20, 8, 8)
@@ -168,6 +177,65 @@ export class GameScene {
     foliage.castShadow = true
     foliage.receiveShadow = true
     this.scene.add(foliage)
+
+    // Register foliage for collision detection
+    if (this.collisionDetector) {
+      this.collisionDetector.registerCollisionMesh(foliage)
+    }
+  }
+
+  setupCollisionGeometry() {
+    // Create boundary walls for world edges
+    const wallHeight = 50
+    const wallThickness = 5
+    const boundarySize = 500
+
+    // Create invisible collision walls at boundaries
+    const wallMaterial = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      wireframe: false
+    })
+
+    // North wall (positive Z)
+    const northWall = new THREE.Mesh(
+      new THREE.BoxGeometry(boundarySize * 2, wallHeight, wallThickness),
+      wallMaterial
+    )
+    northWall.position.set(0, wallHeight / 2, boundarySize + wallThickness / 2)
+    northWall.name = 'boundary-wall'
+    this.scene.add(northWall)
+    this.collisionDetector.registerCollisionMesh(northWall)
+
+    // South wall (negative Z)
+    const southWall = new THREE.Mesh(
+      new THREE.BoxGeometry(boundarySize * 2, wallHeight, wallThickness),
+      wallMaterial
+    )
+    southWall.position.set(0, wallHeight / 2, -boundarySize - wallThickness / 2)
+    southWall.name = 'boundary-wall'
+    this.scene.add(southWall)
+    this.collisionDetector.registerCollisionMesh(southWall)
+
+    // East wall (positive X)
+    const eastWall = new THREE.Mesh(
+      new THREE.BoxGeometry(wallThickness, wallHeight, boundarySize * 2),
+      wallMaterial
+    )
+    eastWall.position.set(boundarySize + wallThickness / 2, wallHeight / 2, 0)
+    eastWall.name = 'boundary-wall'
+    this.scene.add(eastWall)
+    this.collisionDetector.registerCollisionMesh(eastWall)
+
+    // West wall (negative X)
+    const westWall = new THREE.Mesh(
+      new THREE.BoxGeometry(wallThickness, wallHeight, boundarySize * 2),
+      wallMaterial
+    )
+    westWall.position.set(-boundarySize - wallThickness / 2, wallHeight / 2, 0)
+    westWall.name = 'boundary-wall'
+    this.scene.add(westWall)
+    this.collisionDetector.registerCollisionMesh(westWall)
   }
 
   updateCameraPosition() {
@@ -220,6 +288,10 @@ export class GameScene {
     return this.profileManager
   }
 
+  getCollisionDetector() {
+    return this.collisionDetector
+  }
+
   updateProfileZones(playerPosition) {
     if (this.profileManager) {
       this.profileManager.updatePlayerPosition(playerPosition)
@@ -237,6 +309,9 @@ export class GameScene {
     }
     if (this.profileManager) {
       this.profileManager.dispose()
+    }
+    if (this.collisionDetector) {
+      this.collisionDetector.dispose()
     }
     this.renderer.dispose()
   }
