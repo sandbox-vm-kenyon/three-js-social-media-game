@@ -15,7 +15,9 @@ class Game {
     this.running = true
     this.spriteManager = this.scene.getSpriteManager()
     this.profileManager = this.scene.getProfileManager()
+    this.discoveryManager = this.scene.getDiscoveryManager()
     this.npcSprites = new Map()
+    this.discoveryNotifications = []
 
     // Update scene with player position
     this.scene.setPlayerPosition(this.player.position.x, this.player.position.y, this.player.position.z)
@@ -23,6 +25,8 @@ class Game {
     this.setupControls()
     this.createTestProfiles()
     this.createTestNPCs()
+    this.createDiscoverableObjects()
+    this.createSamplePosts()
     this.startGameLoop()
   }
 
@@ -119,6 +123,50 @@ class Game {
     })
   }
 
+  createDiscoverableObjects() {
+    const objects = [
+      { id: 'tree1', name: 'Ancient Oak', pos: { x: 100, y: 0, z: 100 }, category: 'nature', desc: 'A majestic old oak tree' },
+      { id: 'tree2', name: 'Pine Grove', pos: { x: -100, y: 0, z: 100 }, category: 'nature', desc: 'Dense pine forest' },
+      { id: 'tree3', name: 'Birch Cluster', pos: { x: 100, y: 0, z: -100 }, category: 'nature', desc: 'White birch trees' },
+      { id: 'tree4', name: 'Willow Tree', pos: { x: -100, y: 0, z: -100 }, category: 'nature', desc: 'Drooping willow by water' },
+      { id: 'landmark1', name: 'Stone Circle', pos: { x: 150, y: 0, z: 50 }, category: 'landmark', desc: 'Ancient stone arrangement' },
+      { id: 'landmark2', name: 'Bell Tower', pos: { x: -150, y: 0, z: -50 }, category: 'landmark', desc: 'Historic bell tower ruins' },
+      { id: 'landmark3', name: 'Fountain', pos: { x: 75, y: 0, z: -100 }, category: 'landmark', desc: 'Central water fountain' },
+      { id: 'art1', name: 'Mural Wall', pos: { x: 50, y: 0, z: 75 }, category: 'art', desc: 'Street art mural' },
+      { id: 'art2', name: 'Sculpture Garden', pos: { x: -75, y: 0, z: 50 }, category: 'art', desc: 'Open air sculpture display' },
+      { id: 'food1', name: 'Fruit Stand', pos: { x: 120, y: 0, z: -75 }, category: 'food', desc: 'Local market stall' }
+    ]
+
+    objects.forEach(obj => {
+      this.discoveryManager.createObject(obj.id, obj.name,
+        new THREE.Vector3(obj.pos.x, obj.pos.y, obj.pos.z),
+        {
+          category: obj.category,
+          description: obj.desc,
+          tags: [obj.category]
+        }
+      )
+    })
+  }
+
+  createSamplePosts() {
+    // Create some sample posts for discovered objects
+    const samplePosts = [
+      { objectId: 'tree1', author: 'alice', text: 'Such a beautiful old tree! Great spot for photos.' },
+      { objectId: 'tree1', author: 'eve', text: 'The ecosystem around this tree is amazing.' },
+      { objectId: 'landmark1', author: 'bob', text: 'Cool historical site. Worth a visit!' },
+      { objectId: 'art1', author: 'charlie', text: 'The colors on this mural are incredible.' },
+      { objectId: 'art2', author: 'diana', text: 'Such inspiring sculptures in this space.' }
+    ]
+
+    samplePosts.forEach(post => {
+      this.discoveryManager.createPost(post.author, post.text, post.objectId, {
+        visibility: 'public',
+        tags: ['discovery', 'shared']
+      })
+    })
+  }
+
   setupControls() {
     document.addEventListener('keydown', (e) => this.handleKeyDown(e))
     document.addEventListener('keyup', (e) => this.handleKeyUp(e))
@@ -155,6 +203,9 @@ class Game {
 
       // Update profile zones
       this.scene.updateProfileZones(this.player.position)
+
+      // Check for nearby discoveries
+      this.checkDiscoveries()
 
       // Update sprites (billboarding and animation)
       this.scene.updateSprites(deltaTime)
@@ -205,14 +256,33 @@ class Game {
 
     if (profileInfo) {
       const currentProfile = this.profileManager.getCurrentProfile()
+      const discoveries = this.discoveryManager.getPlayerDiscoveries('player1')
       if (currentProfile) {
         profileInfo.innerHTML = `
           <strong>In Zone:</strong> ${currentProfile.username}<br/>
           <small>${currentProfile.bio}</small>
         `
       } else {
-        profileInfo.innerHTML = '<small>Explore the world to find profiles. Collisions enabled.</small>'
+        profileInfo.innerHTML = `<small>Discoveries: ${discoveries.length} | Collisions enabled</small>`
       }
+    }
+
+    // Display discovery notifications
+    const notifArea = document.getElementById('discoveryNotif')
+    if (notifArea && this.discoveryNotifications.length > 0) {
+      notifArea.textContent = `Discovered: ${this.discoveryNotifications[this.discoveryNotifications.length - 1]}`
+    }
+  }
+
+  checkDiscoveries() {
+    const discovered = this.discoveryManager.checkDiscoveries('player1', this.player.position)
+    if (discovered.length > 0) {
+      discovered.forEach(obj => {
+        this.discoveryNotifications.push(obj.name)
+        setTimeout(() => {
+          this.discoveryNotifications.shift()
+        }, 3000)
+      })
     }
   }
 }

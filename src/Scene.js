@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { SpriteManager } from './SpriteManager.js'
 import { ProfileManager } from './ProfileManager.js'
 import { CollisionDetector } from './CollisionDetector.js'
+import { DiscoveryManager } from './DiscoveryManager.js'
 
 export class GameScene {
   constructor(canvas) {
@@ -16,6 +17,7 @@ export class GameScene {
     this.spriteManager = null
     this.profileManager = null
     this.collisionDetector = null
+    this.discoveryManager = null
 
     this.init()
   }
@@ -29,6 +31,7 @@ export class GameScene {
     this.spriteManager = new SpriteManager(this.scene)
     this.profileManager = new ProfileManager(this.scene)
     this.collisionDetector = new CollisionDetector(this.scene)
+    this.discoveryManager = new DiscoveryManager(this.scene)
     this.setupCollisionGeometry()
     this.handleWindowResize()
 
@@ -292,6 +295,10 @@ export class GameScene {
     return this.collisionDetector
   }
 
+  getDiscoveryManager() {
+    return this.discoveryManager
+  }
+
   updateProfileZones(playerPosition) {
     if (this.profileManager) {
       this.profileManager.updatePlayerPosition(playerPosition)
@@ -312,6 +319,9 @@ export class GameScene {
     }
     if (this.collisionDetector) {
       this.collisionDetector.dispose()
+    }
+    if (this.discoveryManager) {
+      this.discoveryManager.dispose()
     }
     this.renderer.dispose()
   }
